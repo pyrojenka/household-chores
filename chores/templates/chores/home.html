@@ -1,0 +1,13 @@
+{% extends "chores/base.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<h1>Welcome, {{ profile.name }}!</h1>
+<p style="text-align: center; color: #666;">
+    Role: {{ profile.get_role_display }}
+</p>
+<p style="text-align: center;">
+    <a href="{% url 'switch_profile' %}">Switch profile</a>
+</p>
+{% endblock %}
