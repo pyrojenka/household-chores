@@ -1,0 +1,39 @@
+{% extends "chores/base.html" %}
+
+{% block title %}My tasks{% endblock %}
+
+{% block content %}
+<h1>My tasks</h1>
+
+{% if my_tasks %}
+<ul style="list-style: none; padding: 0;">
+    {% for task in my_tasks %}
+    <li style="background: white; padding: 0.75rem 1rem; margin-bottom: 0.5rem; border-radius: 8px;">
+        <strong>{{ task.title }}</strong> — {{ task.points }} pts
+        {% if task.deadline %}<br><small>Due {{ task.deadline }}</small>{% endif %}
+    </li>
+    {% endfor %}
+</ul>
+{% else %}
+<p style="text-align: center; color: #666;">No tasks assigned to you right now.</p>
+{% endif %}
+
+<h1>Shared pool</h1>
+{% if pool_tasks %}
+<ul style="list-style: none; padding: 0;">
+    {% for task in pool_tasks %}
+    <li style="background: white; padding: 0.75rem 1rem; margin-bottom: 0.5rem; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+        <span><strong>{{ task.title }}</strong> — {{ task.points }} pts</span>
+        <form method="post" action="{% url 'claim_task' task.id %}">
+            {% csrf_token %}
+            <button type="submit">Claim</button>
+        </form>
+    </li>
+    {% endfor %}
+</ul>
+{% else %}
+<p style="text-align: center; color: #666;">No unclaimed tasks in the pool.</p>
+{% endif %}
+
+<p style="text-align: center;"><a href="{% url 'home' %}">Back home</a></p>
+{% endblock %}

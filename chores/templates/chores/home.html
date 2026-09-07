@@ -8,6 +8,12 @@
     Role: {{ profile.get_role_display }}
 </p>
 <p style="text-align: center;">
+    <a href="{% url 'task_list' %}">View tasks</a>
+    {% if profile.is_adult %}
+    · <a href="{% url 'create_task' %}">Create task</a>
+    {% endif %}
+</p>
+<p style="text-align: center;">
     <a href="{% url 'switch_profile' %}">Switch profile</a>
 </p>
 {% endblock %}

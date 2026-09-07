@@ -1,0 +1,35 @@
+{% extends "chores/base.html" %}
+
+{% block title %}All tasks{% endblock %}
+
+{% block content %}
+<h1>All tasks</h1>
+<p style="text-align: center;"><a href="{% url 'create_task' %}">+ New task</a></p>
+
+{% if tasks %}
+<table style="width: 100%; border-collapse: collapse;">
+    <tr style="text-align: left; border-bottom: 2px solid #ccc;">
+        <th>Title</th>
+        <th>Assigned to</th>
+        <th>Points</th>
+        <th>Status</th>
+    </tr>
+    {% for task in tasks %}
+    <tr style="border-bottom: 1px solid #eee;">
+        <td>{{ task.title }}</td>
+        <td>
+            {% if task.assigned_to %}{{ task.assigned_to.name }}
+            {% elif task.assignment_mode == "pool" %}<em>Pool (unclaimed)</em>
+            {% else %}—{% endif %}
+        </td>
+        <td>{{ task.points }}</td>
+        <td>{{ task.get_status_display }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+<p style="text-align: center; color: #666;">No tasks yet.</p>
+{% endif %}
+
+<p style="text-align: center;"><a href="{% url 'home' %}">Back home</a></p>
+{% endblock %}
