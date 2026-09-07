@@ -130,3 +130,39 @@ def mark_done(request, task_id):
         form = CompletionForm(instance=task)
 
     return render(request, "chores/mark_done.html", {"form": form, "task": task, "profile": profile})
+
+
+def pending_approvals(request):
+    profile = get_current_profile(request)
+    if not profile:
+        return redirect("profile_switcher")
+    if not profile.is_adult:
+        return redirect("task_list")
+
+    tasks = Task.objects.filter(status=Task.Status.DONE)
+    return render(request, "chores/pending_approvals.html", {"profile": profile, "tasks": tasks})
+
+
+def approve_task(request, task_id):
+    profile = get_current_profile(request)
+    if not profile or not profile.is_adult:
+        return redirect("home")
+
+    task = get_object_or_404(Task, id=task_id, status=Task.Status.DONE)
+    task.status = Task.Status.APPROVED
+    task.approved_by = profile
+    task.approved_at = timezone.now()
+    task.save()
+    return redirect("pending_approvals")
+
+
+def reject_task(request, task_id):
+    profile = get_current_profile(request)
+    if not profile or not profile.is_adult:
+        return redirect("home")
+
+    task = get_object_or_404(Task, id=task_id, status=Task.Status.DONE)
+    task.status = Task.Status.TODO
+    task.completed_at = None
+    task.save()
+    return redirect("pending_approvals")

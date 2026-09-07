@@ -24,6 +24,11 @@ class Profile(models.Model):
     def is_child(self):
         return self.role == self.Role.CHILD
 
+    @property
+    def points_balance(self):
+        approved = self.tasks.filter(status=Task.Status.APPROVED)
+        return sum(task.points for task in approved)
+
 
 class Task(models.Model):
     class Difficulty(models.TextChoices):
@@ -94,6 +99,15 @@ class Task(models.Model):
     before_photo = models.ImageField(upload_to="task_photos/before/", null=True, blank=True)
     after_photo = models.ImageField(upload_to="task_photos/after/", null=True, blank=True)
     completed_at = models.DateTimeField(null=True, blank=True)
+    approved_by = models.ForeignKey(
+        Profile,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="approved_tasks",
+        limit_choices_to={"role": Profile.Role.ADULT},
+    )
+    approved_at = models.DateTimeField(null=True, blank=True)
 
     @property
     def is_template(self):

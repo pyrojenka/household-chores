@@ -6,11 +6,13 @@
 <h1>Welcome, {{ profile.name }}!</h1>
 <p style="text-align: center; color: #666;">
     Role: {{ profile.get_role_display }}
+    {% if profile.is_child %} · {{ profile.points_balance }} pts{% endif %}
 </p>
 <p style="text-align: center;">
     <a href="{% url 'task_list' %}">View tasks</a>
     {% if profile.is_adult %}
     · <a href="{% url 'create_task' %}">Create task</a>
+    · <a href="{% url 'pending_approvals' %}">Pending approvals</a>
     {% endif %}
 </p>
 <p style="text-align: center;">

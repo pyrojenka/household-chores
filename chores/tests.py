@@ -251,3 +251,68 @@ class MarkDoneViewTests(TestCase):
 
         self.assertNotIn(self.task, response.context["my_tasks"])
         self.assertIn(self.task, response.context["pending_tasks"])
+
+
+class ApprovalViewTests(TestCase):
+    def setUp(self):
+        self.adult = Profile.objects.get(name="Mom")
+        self.emma = Profile.objects.get(name="Emma")
+        self.task = Task.objects.create(
+            title="Wash dishes",
+            difficulty=Task.Difficulty.MEDIUM,
+            assignment_mode=Task.AssignmentMode.DIRECT,
+            assigned_to=self.emma,
+            created_by=self.adult,
+            status=Task.Status.DONE,
+        )
+
+    def _select(self, profile):
+        session = self.client.session
+        session["profile_id"] = profile.id
+        session.save()
+
+    def test_pending_approvals_lists_done_tasks(self):
+        self._select(self.adult)
+
+        response = self.client.get(reverse("pending_approvals"))
+
+        self.assertContains(response, "Wash dishes")
+
+    def test_approving_awards_points_to_the_child(self):
+        self._select(self.adult)
+        self.assertEqual(self.emma.points_balance, 0)
+
+        response = self.client.post(reverse("approve_task", args=[self.task.id]))
+
+        self.assertRedirects(response, reverse("pending_approvals"))
+        self.task.refresh_from_db()
+        self.assertEqual(self.task.status, Task.Status.APPROVED)
+        self.assertEqual(self.task.approved_by, self.adult)
+        self.assertIsNotNone(self.task.approved_at)
+        self.assertEqual(self.emma.points_balance, 20)
+
+    def test_rejecting_sends_task_back_to_todo(self):
+        self._select(self.adult)
+
+        response = self.client.post(reverse("reject_task", args=[self.task.id]))
+
+        self.assertRedirects(response, reverse("pending_approvals"))
+        self.task.refresh_from_db()
+        self.assertEqual(self.task.status, Task.Status.TODO)
+        self.assertEqual(self.emma.points_balance, 0)
+
+    def test_child_cannot_access_pending_approvals(self):
+        self._select(self.emma)
+
+        response = self.client.get(reverse("pending_approvals"))
+
+        self.assertRedirects(response, reverse("task_list"))
+
+    def test_child_cannot_approve_a_task(self):
+        self._select(self.emma)
+
+        response = self.client.post(reverse("approve_task", args=[self.task.id]))
+
+        self.assertRedirects(response, reverse("home"))
+        self.task.refresh_from_db()
+        self.assertEqual(self.task.status, Task.Status.DONE)

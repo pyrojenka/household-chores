@@ -1,0 +1,50 @@
+{% extends "chores/base.html" %}
+
+{% block title %}Pending approvals{% endblock %}
+
+{% block content %}
+<h1>Pending approvals</h1>
+
+{% if tasks %}
+<ul style="list-style: none; padding: 0;">
+    {% for task in tasks %}
+    <li style="background: white; padding: 1rem; margin-bottom: 1rem; border-radius: 8px;">
+        <strong>{{ task.title }}</strong> — {{ task.points }} pts
+        <br><small>By {{ task.assigned_to.name }}</small>
+
+        {% if task.before_photo or task.after_photo %}
+        <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
+            {% if task.before_photo %}
+            <div>
+                <p style="margin: 0; font-size: 0.8rem; color: #666;">Before</p>
+                <img src="{{ task.before_photo.url }}" style="max-width: 150px; border-radius: 4px;">
+            </div>
+            {% endif %}
+            {% if task.after_photo %}
+            <div>
+                <p style="margin: 0; font-size: 0.8rem; color: #666;">After</p>
+                <img src="{{ task.after_photo.url }}" style="max-width: 150px; border-radius: 4px;">
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <div style="margin-top: 0.75rem; display: flex; gap: 0.5rem;">
+            <form method="post" action="{% url 'approve_task' task.id %}">
+                {% csrf_token %}
+                <button type="submit">Approve</button>
+            </form>
+            <form method="post" action="{% url 'reject_task' task.id %}">
+                {% csrf_token %}
+                <button type="submit">Send back</button>
+            </form>
+        </div>
+    </li>
+    {% endfor %}
+</ul>
+{% else %}
+<p style="text-align: center; color: #666;">Nothing waiting for approval.</p>
+{% endif %}
+
+<p style="text-align: center;"><a href="{% url 'home' %}">Back home</a></p>
+{% endblock %}
