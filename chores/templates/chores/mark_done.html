@@ -1,0 +1,22 @@
+{% extends "chores/base.html" %}
+
+{% block title %}Mark done{% endblock %}
+
+{% block content %}
+<h1>{{ task.title }}</h1>
+<p style="text-align: center; color: #666;">{{ task.points }} pts if approved</p>
+
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <table style="width: 100%;">
+        {{ form.as_table }}
+    </table>
+    <p style="text-align: center; color: #999; font-size: 0.9rem;">Photos are optional.</p>
+    <p style="text-align: center;">
+        <button type="submit">Mark as done</button>
+    </p>
+</form>
+<p style="text-align: center;">
+    <a href="{% url 'task_list' %}">Cancel</a>
+</p>
+{% endblock %}

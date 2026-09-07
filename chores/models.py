@@ -48,7 +48,7 @@ class Task(models.Model):
 
     class Status(models.TextChoices):
         TODO = "todo", "To do"
-        DONE = "done", "Done"
+        DONE = "done", "Pending approval"
         APPROVED = "approved", "Approved"
 
     title = models.CharField(max_length=200)
@@ -91,6 +91,9 @@ class Task(models.Model):
         blank=True,
         help_text="The day this generated instance is meant for",
     )
+    before_photo = models.ImageField(upload_to="task_photos/before/", null=True, blank=True)
+    after_photo = models.ImageField(upload_to="task_photos/after/", null=True, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
 
     @property
     def is_template(self):

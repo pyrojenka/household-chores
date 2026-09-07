@@ -8,14 +8,28 @@
 {% if my_tasks %}
 <ul style="list-style: none; padding: 0;">
     {% for task in my_tasks %}
-    <li style="background: white; padding: 0.75rem 1rem; margin-bottom: 0.5rem; border-radius: 8px;">
-        <strong>{{ task.title }}</strong> — {{ task.points }} pts
-        {% if task.deadline %}<br><small>Due {{ task.deadline }}</small>{% endif %}
+    <li style="background: white; padding: 0.75rem 1rem; margin-bottom: 0.5rem; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+        <span>
+            <strong>{{ task.title }}</strong> — {{ task.points }} pts
+            {% if task.deadline %}<br><small>Due {{ task.deadline }}</small>{% endif %}
+        </span>
+        <a href="{% url 'mark_done' task.id %}"><button type="button">Mark done</button></a>
     </li>
     {% endfor %}
 </ul>
 {% else %}
 <p style="text-align: center; color: #666;">No tasks assigned to you right now.</p>
+{% endif %}
+
+{% if pending_tasks %}
+<h1>Pending approval</h1>
+<ul style="list-style: none; padding: 0;">
+    {% for task in pending_tasks %}
+    <li style="background: #fff8e1; padding: 0.75rem 1rem; margin-bottom: 0.5rem; border-radius: 8px;">
+        <strong>{{ task.title }}</strong> — {{ task.points }} pts <small>(waiting for approval)</small>
+    </li>
+    {% endfor %}
+</ul>
 {% endif %}
 
 <h1>Shared pool</h1>

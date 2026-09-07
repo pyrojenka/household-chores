@@ -25,3 +25,9 @@ class TaskForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields["assigned_to"].queryset = Profile.objects.filter(role=Profile.Role.CHILD)
         self.fields["assigned_to"].required = False
+
+
+class CompletionForm(forms.ModelForm):
+    class Meta:
+        model = Task
+        fields = ["before_photo", "after_photo"]

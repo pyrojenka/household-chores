@@ -2,8 +2,9 @@ from datetime import date
 
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 
-from .forms import TaskForm
+from .forms import CompletionForm, TaskForm
 from .models import Profile, Task
 from .recurrence import generate_recurring_tasks
 
@@ -80,6 +81,7 @@ def task_list(request):
     my_tasks = Task.objects.filter(
         assigned_to=profile, status=Task.Status.TODO, recurrence=Task.Recurrence.NONE
     ).filter(due)
+    pending_tasks = Task.objects.filter(assigned_to=profile, status=Task.Status.DONE)
     pool_tasks = Task.objects.filter(
         assignment_mode=Task.AssignmentMode.POOL,
         assigned_to__isnull=True,
@@ -89,7 +91,7 @@ def task_list(request):
     return render(
         request,
         "chores/task_list_child.html",
-        {"profile": profile, "my_tasks": my_tasks, "pool_tasks": pool_tasks},
+        {"profile": profile, "my_tasks": my_tasks, "pending_tasks": pending_tasks, "pool_tasks": pool_tasks},
     )
 
 
@@ -107,3 +109,24 @@ def claim_task(request, task_id):
     task.assigned_to = profile
     task.save()
     return redirect("task_list")
+
+
+def mark_done(request, task_id):
+    profile = get_current_profile(request)
+    if not profile or not profile.is_child:
+        return redirect("home")
+
+    task = get_object_or_404(Task, id=task_id, assigned_to=profile, status=Task.Status.TODO)
+
+    if request.method == "POST":
+        form = CompletionForm(request.POST, request.FILES, instance=task)
+        if form.is_valid():
+            task = form.save(commit=False)
+            task.status = Task.Status.DONE
+            task.completed_at = timezone.now()
+            task.save()
+            return redirect("task_list")
+    else:
+        form = CompletionForm(instance=task)
+
+    return render(request, "chores/mark_done.html", {"form": form, "task": task, "profile": profile})

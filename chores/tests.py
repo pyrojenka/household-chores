@@ -1,10 +1,17 @@
 from datetime import date, timedelta
 
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
 
 from .models import Profile, Task
 from .recurrence import WEEKDAY_CODES, generate_recurring_tasks
+
+TINY_GIF = (
+    b"\x47\x49\x46\x38\x39\x61\x01\x00\x01\x00\x80\x00\x00\x00\x00\x00"
+    b"\xff\xff\xff\x21\xf9\x04\x00\x00\x00\x00\x00\x2c\x00\x00\x00\x00"
+    b"\x01\x00\x01\x00\x00\x02\x02\x44\x01\x00\x3b"
+)
 
 
 class ProfileModelTests(TestCase):
@@ -182,3 +189,65 @@ class TaskListViewTests(TestCase):
 
         self.assertEqual(list(response.context["templates"]), list(Task.objects.filter(recurrence=Task.Recurrence.DAILY)))
         self.assertEqual(response.context["tasks"].count(), 1)
+
+
+class MarkDoneViewTests(TestCase):
+    def setUp(self):
+        self.adult = Profile.objects.get(name="Mom")
+        self.emma = Profile.objects.get(name="Emma")
+        self.max = Profile.objects.get(name="Max")
+        self.task = Task.objects.create(
+            title="Wash dishes",
+            difficulty=Task.Difficulty.EASY,
+            assignment_mode=Task.AssignmentMode.DIRECT,
+            assigned_to=self.emma,
+            created_by=self.adult,
+        )
+
+    def _select(self, profile):
+        session = self.client.session
+        session["profile_id"] = profile.id
+        session.save()
+
+    def test_marking_done_without_photos_moves_task_to_pending_approval(self):
+        self._select(self.emma)
+
+        response = self.client.post(reverse("mark_done", args=[self.task.id]), {})
+
+        self.assertRedirects(response, reverse("task_list"))
+        self.task.refresh_from_db()
+        self.assertEqual(self.task.status, Task.Status.DONE)
+        self.assertIsNotNone(self.task.completed_at)
+
+    def test_marking_done_with_before_and_after_photos_saves_them(self):
+        self._select(self.emma)
+        before = SimpleUploadedFile("before.gif", TINY_GIF, content_type="image/gif")
+        after = SimpleUploadedFile("after.gif", TINY_GIF, content_type="image/gif")
+
+        self.client.post(
+            reverse("mark_done", args=[self.task.id]),
+            {"before_photo": before, "after_photo": after},
+        )
+
+        self.task.refresh_from_db()
+        self.assertTrue(self.task.before_photo.name)
+        self.assertTrue(self.task.after_photo.name)
+        self.task.before_photo.delete(save=False)
+        self.task.after_photo.delete(save=False)
+
+    def test_other_childs_task_cannot_be_marked_done(self):
+        self._select(self.max)
+
+        response = self.client.post(reverse("mark_done", args=[self.task.id]), {})
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_pending_task_is_excluded_from_todo_list_and_shown_as_pending(self):
+        self.task.status = Task.Status.DONE
+        self.task.save()
+        self._select(self.emma)
+
+        response = self.client.get(reverse("task_list"))
+
+        self.assertNotIn(self.task, response.context["my_tasks"])
+        self.assertIn(self.task, response.context["pending_tasks"])
