@@ -383,3 +383,56 @@ class RewardRedemptionTests(TestCase):
 
         self.assertRedirects(response, reverse("reward_catalog"))
         self.assertFalse(Reward.objects.filter(name="Hack").exists())
+
+
+class TaskHistoryViewTests(TestCase):
+    def setUp(self):
+        self.adult = Profile.objects.get(name="Mom")
+        self.emma = Profile.objects.get(name="Emma")
+        self.max = Profile.objects.get(name="Max")
+        self.emma_task = Task.objects.create(
+            title="Wash dishes",
+            difficulty=Task.Difficulty.EASY,
+            assignment_mode=Task.AssignmentMode.DIRECT,
+            assigned_to=self.emma,
+            created_by=self.adult,
+            status=Task.Status.APPROVED,
+        )
+        self.max_task = Task.objects.create(
+            title="Take out trash",
+            difficulty=Task.Difficulty.EASY,
+            assignment_mode=Task.AssignmentMode.DIRECT,
+            assigned_to=self.max,
+            created_by=self.adult,
+            status=Task.Status.APPROVED,
+        )
+        self.pending_task = Task.objects.create(
+            title="Still pending",
+            difficulty=Task.Difficulty.EASY,
+            assignment_mode=Task.AssignmentMode.DIRECT,
+            assigned_to=self.emma,
+            created_by=self.adult,
+            status=Task.Status.DONE,
+        )
+
+    def _select(self, profile):
+        session = self.client.session
+        session["profile_id"] = profile.id
+        session.save()
+
+    def test_adult_sees_all_completed_tasks(self):
+        self._select(self.adult)
+
+        response = self.client.get(reverse("task_history"))
+
+        self.assertIn(self.emma_task, response.context["tasks"])
+        self.assertIn(self.max_task, response.context["tasks"])
+        self.assertNotIn(self.pending_task, response.context["tasks"])
+
+    def test_child_sees_only_their_own_completed_tasks(self):
+        self._select(self.emma)
+
+        response = self.client.get(reverse("task_history"))
+
+        self.assertIn(self.emma_task, response.context["tasks"])
+        self.assertNotIn(self.max_task, response.context["tasks"])

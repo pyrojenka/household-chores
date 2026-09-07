@@ -230,3 +230,15 @@ def redemption_history(request):
 
     redemptions = Redemption.objects.all()
     return render(request, "chores/redemption_history.html", {"profile": profile, "redemptions": redemptions})
+
+
+def task_history(request):
+    profile = get_current_profile(request)
+    if not profile:
+        return redirect("profile_switcher")
+
+    completed = Task.objects.filter(status=Task.Status.APPROVED).order_by("-approved_at")
+    if profile.is_child:
+        completed = completed.filter(assigned_to=profile)
+
+    return render(request, "chores/task_history.html", {"profile": profile, "tasks": completed})

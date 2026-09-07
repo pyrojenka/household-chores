@@ -18,4 +18,5 @@ urlpatterns = [
     path("rewards/new/", views.create_reward, name="create_reward"),
     path("rewards/<int:reward_id>/redeem/", views.redeem_reward, name="redeem_reward"),
     path("rewards/history/", views.redemption_history, name="redemption_history"),
+    path("tasks/history/", views.task_history, name="task_history"),
 ]

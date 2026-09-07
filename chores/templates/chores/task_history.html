@@ -1,0 +1,32 @@
+{% extends "chores/base.html" %}
+
+{% block title %}Completed tasks{% endblock %}
+
+{% block content %}
+<h1>Completed tasks</h1>
+
+{% if tasks %}
+<table style="width: 100%; border-collapse: collapse;">
+    <tr style="text-align: left; border-bottom: 2px solid #ccc;">
+        <th>Task</th>
+        {% if profile.is_adult %}<th>By</th>{% endif %}
+        <th>Points</th>
+        <th>Completed</th>
+        <th>Approved by</th>
+    </tr>
+    {% for task in tasks %}
+    <tr style="border-bottom: 1px solid #eee;">
+        <td>{{ task.title }}</td>
+        {% if profile.is_adult %}<td>{{ task.assigned_to.name }}</td>{% endif %}
+        <td>{{ task.points }}</td>
+        <td>{{ task.completed_at|date:"M j, H:i" }}</td>
+        <td>{{ task.approved_by.name }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+<p style="text-align: center; color: #666;">No completed tasks yet.</p>
+{% endif %}
+
+<p style="text-align: center;"><a href="{% url 'home' %}">Back home</a></p>
+{% endblock %}
