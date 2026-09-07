@@ -1,0 +1,25 @@
+{% extends "chores/base.html" %}
+
+{% block title %}Rewards{% endblock %}
+
+{% block content %}
+<h1>Rewards</h1>
+<p style="text-align: center;">
+    <a href="{% url 'create_reward' %}">+ New reward</a>
+    · <a href="{% url 'redemption_history' %}">Redemption history</a>
+</p>
+
+{% if rewards %}
+<ul style="list-style: none; padding: 0;">
+    {% for reward in rewards %}
+    <li style="background: white; padding: 0.75rem 1rem; margin-bottom: 0.5rem; border-radius: 8px;">
+        <strong>{{ reward.name }}</strong> — {{ reward.point_cost }} pts
+    </li>
+    {% endfor %}
+</ul>
+{% else %}
+<p style="text-align: center; color: #666;">No rewards yet.</p>
+{% endif %}
+
+<p style="text-align: center;"><a href="{% url 'home' %}">Back home</a></p>
+{% endblock %}

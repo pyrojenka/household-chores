@@ -1,0 +1,30 @@
+{% extends "chores/base.html" %}
+
+{% block title %}Redemption history{% endblock %}
+
+{% block content %}
+<h1>Redemption history</h1>
+
+{% if redemptions %}
+<table style="width: 100%; border-collapse: collapse;">
+    <tr style="text-align: left; border-bottom: 2px solid #ccc;">
+        <th>Child</th>
+        <th>Reward</th>
+        <th>Points spent</th>
+        <th>When</th>
+    </tr>
+    {% for redemption in redemptions %}
+    <tr style="border-bottom: 1px solid #eee;">
+        <td>{{ redemption.profile.name }}</td>
+        <td>{{ redemption.reward_name }}</td>
+        <td>{{ redemption.points_spent }}</td>
+        <td>{{ redemption.redeemed_at|date:"M j, H:i" }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+<p style="text-align: center; color: #666;">No redemptions yet.</p>
+{% endif %}
+
+<p style="text-align: center;"><a href="{% url 'reward_catalog' %}">Back to rewards</a></p>
+{% endblock %}

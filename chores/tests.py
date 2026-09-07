@@ -4,7 +4,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
 
-from .models import Profile, Task
+from .models import Profile, Redemption, Reward, Task
 from .recurrence import WEEKDAY_CODES, generate_recurring_tasks
 
 TINY_GIF = (
@@ -316,3 +316,70 @@ class ApprovalViewTests(TestCase):
         self.assertRedirects(response, reverse("home"))
         self.task.refresh_from_db()
         self.assertEqual(self.task.status, Task.Status.DONE)
+
+
+class RewardRedemptionTests(TestCase):
+    def setUp(self):
+        self.adult = Profile.objects.get(name="Mom")
+        self.emma = Profile.objects.get(name="Emma")
+        self.approved_task = Task.objects.create(
+            title="Wash dishes",
+            difficulty=Task.Difficulty.HARD,
+            assignment_mode=Task.AssignmentMode.DIRECT,
+            assigned_to=self.emma,
+            created_by=self.adult,
+            status=Task.Status.APPROVED,
+        )
+        self.reward = Reward.objects.create(name="Movie night", point_cost=30, created_by=self.adult)
+
+    def _select(self, profile):
+        session = self.client.session
+        session["profile_id"] = profile.id
+        session.save()
+
+    def test_redeeming_deducts_points_and_records_redemption(self):
+        self._select(self.emma)
+        self.assertEqual(self.emma.points_balance, 30)
+
+        response = self.client.post(reverse("redeem_reward", args=[self.reward.id]))
+
+        self.assertRedirects(response, reverse("reward_catalog"))
+        self.assertEqual(self.emma.points_balance, 0)
+        redemption = Redemption.objects.get(profile=self.emma)
+        self.assertEqual(redemption.reward_name, "Movie night")
+        self.assertEqual(redemption.points_spent, 30)
+
+    def test_cannot_redeem_without_enough_points(self):
+        expensive_reward = Reward.objects.create(name="New bike", point_cost=1000, created_by=self.adult)
+        self._select(self.emma)
+
+        self.client.post(reverse("redeem_reward", args=[expensive_reward.id]))
+
+        self.assertEqual(self.emma.points_balance, 30)
+        self.assertFalse(Redemption.objects.filter(reward=expensive_reward).exists())
+
+    def test_redemption_history_visible_to_adult(self):
+        Redemption.objects.create(
+            profile=self.emma, reward=self.reward, reward_name=self.reward.name, points_spent=30
+        )
+        self._select(self.adult)
+
+        response = self.client.get(reverse("redemption_history"))
+
+        self.assertContains(response, "Movie night")
+        self.assertContains(response, "Emma")
+
+    def test_child_cannot_access_redemption_history(self):
+        self._select(self.emma)
+
+        response = self.client.get(reverse("redemption_history"))
+
+        self.assertRedirects(response, reverse("home"))
+
+    def test_child_cannot_create_reward(self):
+        self._select(self.emma)
+
+        response = self.client.post(reverse("create_reward"), {"name": "Hack", "point_cost": 1})
+
+        self.assertRedirects(response, reverse("reward_catalog"))
+        self.assertFalse(Reward.objects.filter(name="Hack").exists())

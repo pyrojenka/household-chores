@@ -4,8 +4,8 @@ from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
-from .forms import CompletionForm, TaskForm
-from .models import Profile, Task
+from .forms import CompletionForm, RewardForm, TaskForm
+from .models import Profile, Redemption, Reward, Task
 from .recurrence import generate_recurring_tasks
 
 
@@ -166,3 +166,67 @@ def reject_task(request, task_id):
     task.completed_at = None
     task.save()
     return redirect("pending_approvals")
+
+
+def reward_catalog(request):
+    profile = get_current_profile(request)
+    if not profile:
+        return redirect("profile_switcher")
+
+    rewards = Reward.objects.all()
+
+    if profile.is_adult:
+        return render(request, "chores/reward_catalog_adult.html", {"profile": profile, "rewards": rewards})
+
+    return render(
+        request,
+        "chores/reward_catalog_child.html",
+        {"profile": profile, "rewards": rewards},
+    )
+
+
+def create_reward(request):
+    profile = get_current_profile(request)
+    if not profile:
+        return redirect("profile_switcher")
+    if not profile.is_adult:
+        return redirect("reward_catalog")
+
+    if request.method == "POST":
+        form = RewardForm(request.POST)
+        if form.is_valid():
+            reward = form.save(commit=False)
+            reward.created_by = profile
+            reward.save()
+            return redirect("reward_catalog")
+    else:
+        form = RewardForm()
+
+    return render(request, "chores/create_reward.html", {"form": form, "profile": profile})
+
+
+def redeem_reward(request, reward_id):
+    profile = get_current_profile(request)
+    if not profile or not profile.is_child:
+        return redirect("home")
+
+    reward = get_object_or_404(Reward, id=reward_id)
+    if profile.points_balance >= reward.point_cost:
+        Redemption.objects.create(
+            profile=profile,
+            reward=reward,
+            reward_name=reward.name,
+            points_spent=reward.point_cost,
+        )
+    return redirect("reward_catalog")
+
+
+def redemption_history(request):
+    profile = get_current_profile(request)
+    if not profile:
+        return redirect("profile_switcher")
+    if not profile.is_adult:
+        return redirect("home")
+
+    redemptions = Redemption.objects.all()
+    return render(request, "chores/redemption_history.html", {"profile": profile, "redemptions": redemptions})

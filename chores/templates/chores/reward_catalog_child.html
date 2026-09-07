@@ -1,0 +1,30 @@
+{% extends "chores/base.html" %}
+
+{% block title %}Rewards{% endblock %}
+
+{% block content %}
+<h1>Rewards</h1>
+<p style="text-align: center; color: #666;">You have {{ profile.points_balance }} pts</p>
+
+{% if rewards %}
+<ul style="list-style: none; padding: 0;">
+    {% for reward in rewards %}
+    <li style="background: white; padding: 0.75rem 1rem; margin-bottom: 0.5rem; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+        <span><strong>{{ reward.name }}</strong> — {{ reward.point_cost }} pts</span>
+        {% if profile.points_balance >= reward.point_cost %}
+        <form method="post" action="{% url 'redeem_reward' reward.id %}">
+            {% csrf_token %}
+            <button type="submit">Redeem</button>
+        </form>
+        {% else %}
+        <span style="color: #999; font-size: 0.9rem;">Not enough points</span>
+        {% endif %}
+    </li>
+    {% endfor %}
+</ul>
+{% else %}
+<p style="text-align: center; color: #666;">No rewards available yet.</p>
+{% endif %}
+
+<p style="text-align: center;"><a href="{% url 'home' %}">Back home</a></p>
+{% endblock %}

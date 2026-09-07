@@ -10,6 +10,7 @@
 </p>
 <p style="text-align: center;">
     <a href="{% url 'task_list' %}">View tasks</a>
+    · <a href="{% url 'reward_catalog' %}">Rewards</a>
     {% if profile.is_adult %}
     · <a href="{% url 'create_task' %}">Create task</a>
     · <a href="{% url 'pending_approvals' %}">Pending approvals</a>

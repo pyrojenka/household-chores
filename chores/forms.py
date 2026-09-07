@@ -1,6 +1,6 @@
 from django import forms
 
-from .models import Profile, Task
+from .models import Profile, Reward, Task
 
 
 class TaskForm(forms.ModelForm):
@@ -31,3 +31,9 @@ class CompletionForm(forms.ModelForm):
     class Meta:
         model = Task
         fields = ["before_photo", "after_photo"]
+
+
+class RewardForm(forms.ModelForm):
+    class Meta:
+        model = Reward
+        fields = ["name", "point_cost"]

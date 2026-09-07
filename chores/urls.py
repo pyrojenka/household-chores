@@ -14,4 +14,8 @@ urlpatterns = [
     path("tasks/pending-approvals/", views.pending_approvals, name="pending_approvals"),
     path("tasks/<int:task_id>/approve/", views.approve_task, name="approve_task"),
     path("tasks/<int:task_id>/reject/", views.reject_task, name="reject_task"),
+    path("rewards/", views.reward_catalog, name="reward_catalog"),
+    path("rewards/new/", views.create_reward, name="create_reward"),
+    path("rewards/<int:reward_id>/redeem/", views.redeem_reward, name="redeem_reward"),
+    path("rewards/history/", views.redemption_history, name="redemption_history"),
 ]

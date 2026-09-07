@@ -27,7 +27,9 @@ class Profile(models.Model):
     @property
     def points_balance(self):
         approved = self.tasks.filter(status=Task.Status.APPROVED)
-        return sum(task.points for task in approved)
+        earned = sum(task.points for task in approved)
+        spent = sum(redemption.points_spent for redemption in self.redemptions.all())
+        return earned - spent
 
 
 class Task(models.Model):
@@ -122,3 +124,40 @@ class Task(models.Model):
     @property
     def points(self):
         return self.POINTS_BY_DIFFICULTY[self.difficulty]
+
+
+class Reward(models.Model):
+    name = models.CharField(max_length=100)
+    point_cost = models.PositiveIntegerField()
+    created_by = models.ForeignKey(
+        Profile,
+        on_delete=models.CASCADE,
+        related_name="created_rewards",
+        limit_choices_to={"role": Profile.Role.ADULT},
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["point_cost"]
+
+    def __str__(self):
+        return f"{self.name} ({self.point_cost} pts)"
+
+
+class Redemption(models.Model):
+    profile = models.ForeignKey(
+        Profile,
+        on_delete=models.CASCADE,
+        related_name="redemptions",
+        limit_choices_to={"role": Profile.Role.CHILD},
+    )
+    reward = models.ForeignKey(Reward, null=True, on_delete=models.SET_NULL, related_name="redemptions")
+    reward_name = models.CharField(max_length=100)
+    points_spent = models.PositiveIntegerField()
+    redeemed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-redeemed_at"]
+
+    def __str__(self):
+        return f"{self.profile.name} redeemed {self.reward_name}"
