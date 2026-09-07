@@ -6,6 +6,34 @@
 <h1>All tasks</h1>
 <p style="text-align: center;"><a href="{% url 'create_task' %}">+ New task</a></p>
 
+{% if templates %}
+<h2>Recurring templates</h2>
+<table style="width: 100%; border-collapse: collapse;">
+    <tr style="text-align: left; border-bottom: 2px solid #ccc;">
+        <th>Title</th>
+        <th>Recurrence</th>
+        <th>Assigned to</th>
+        <th>Points</th>
+    </tr>
+    {% for template in templates %}
+    <tr style="border-bottom: 1px solid #eee;">
+        <td>{{ template.title }}</td>
+        <td>
+            {{ template.get_recurrence_display }}
+            {% if template.recurrence == "weekly" %}({{ template.weekdays }}){% endif %}
+        </td>
+        <td>
+            {% if template.assigned_to %}{{ template.assigned_to.name }}
+            {% elif template.assignment_mode == "pool" %}<em>Pool</em>
+            {% else %}—{% endif %}
+        </td>
+        <td>{{ template.points }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% endif %}
+
+<h2>Tasks</h2>
 {% if tasks %}
 <table style="width: 100%; border-collapse: collapse;">
     <tr style="text-align: left; border-bottom: 2px solid #ccc;">
@@ -16,7 +44,7 @@
     </tr>
     {% for task in tasks %}
     <tr style="border-bottom: 1px solid #eee;">
-        <td>{{ task.title }}</td>
+        <td>{{ task.title }}{% if task.template %} <small>(recurring)</small>{% endif %}</td>
         <td>
             {% if task.assigned_to %}{{ task.assigned_to.name }}
             {% elif task.assignment_mode == "pool" %}<em>Pool (unclaimed)</em>

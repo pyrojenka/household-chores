@@ -1,7 +1,11 @@
+from datetime import date
+
+from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 
 from .forms import TaskForm
 from .models import Profile, Task
+from .recurrence import generate_recurring_tasks
 
 
 def get_current_profile(request):
@@ -61,16 +65,27 @@ def task_list(request):
     if not profile:
         return redirect("profile_switcher")
 
-    if profile.is_adult:
-        tasks = Task.objects.all()
-        return render(request, "chores/task_list_adult.html", {"profile": profile, "tasks": tasks})
+    generate_recurring_tasks()
 
-    my_tasks = Task.objects.filter(assigned_to=profile, status=Task.Status.TODO)
+    if profile.is_adult:
+        templates = Task.objects.filter(recurrence__in=["daily", "weekly"])
+        tasks = Task.objects.filter(recurrence=Task.Recurrence.NONE)
+        return render(
+            request,
+            "chores/task_list_adult.html",
+            {"profile": profile, "tasks": tasks, "templates": templates},
+        )
+
+    due = Q(scheduled_date__isnull=True) | Q(scheduled_date__lte=date.today())
+    my_tasks = Task.objects.filter(
+        assigned_to=profile, status=Task.Status.TODO, recurrence=Task.Recurrence.NONE
+    ).filter(due)
     pool_tasks = Task.objects.filter(
         assignment_mode=Task.AssignmentMode.POOL,
         assigned_to__isnull=True,
         status=Task.Status.TODO,
-    )
+        recurrence=Task.Recurrence.NONE,
+    ).filter(due)
     return render(
         request,
         "chores/task_list_child.html",

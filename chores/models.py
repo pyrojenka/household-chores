@@ -78,6 +78,23 @@ class Task(models.Model):
         limit_choices_to={"role": Profile.Role.ADULT},
     )
     created_at = models.DateTimeField(auto_now_add=True)
+    template = models.ForeignKey(
+        "self",
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="instances",
+        help_text="The recurring task this one-off instance was generated from",
+    )
+    scheduled_date = models.DateField(
+        null=True,
+        blank=True,
+        help_text="The day this generated instance is meant for",
+    )
+
+    @property
+    def is_template(self):
+        return self.recurrence != self.Recurrence.NONE
 
     class Meta:
         ordering = ["-created_at"]
