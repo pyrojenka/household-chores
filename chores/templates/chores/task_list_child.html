@@ -11,7 +11,13 @@
     <li style="background: white; padding: 0.75rem 1rem; margin-bottom: 0.5rem; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
         <span>
             <strong>{{ task.title }}</strong> — {{ task.points }} pts
-            {% if task.deadline %}<br><small>Due {{ task.deadline }}</small>{% endif %}
+            {% if task.deadline_status == "overdue" %}
+            <br><small style="color: #c62828;">⚠ Overdue (was due {{ task.deadline }})</small>
+            {% elif task.deadline_status == "due_today" %}
+            <br><small style="color: #e65100;">⏰ Due today</small>
+            {% elif task.deadline %}
+            <br><small>Due {{ task.deadline }}</small>
+            {% endif %}
         </span>
         <a href="{% url 'mark_done' task.id %}"><button type="button">Mark done</button></a>
     </li>
@@ -37,7 +43,16 @@
 <ul style="list-style: none; padding: 0;">
     {% for task in pool_tasks %}
     <li style="background: white; padding: 0.75rem 1rem; margin-bottom: 0.5rem; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
-        <span><strong>{{ task.title }}</strong> — {{ task.points }} pts</span>
+        <span>
+            <strong>{{ task.title }}</strong> — {{ task.points }} pts
+            {% if task.deadline_status == "overdue" %}
+            <br><small style="color: #c62828;">⚠ Overdue (was due {{ task.deadline }})</small>
+            {% elif task.deadline_status == "due_today" %}
+            <br><small style="color: #e65100;">⏰ Due today</small>
+            {% elif task.deadline %}
+            <br><small>Due {{ task.deadline }}</small>
+            {% endif %}
+        </span>
         <form method="post" action="{% url 'claim_task' task.id %}">
             {% csrf_token %}
             <button type="submit">Claim</button>

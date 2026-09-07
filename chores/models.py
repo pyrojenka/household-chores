@@ -1,3 +1,5 @@
+from datetime import date
+
 from django.db import models
 
 
@@ -124,6 +126,17 @@ class Task(models.Model):
     @property
     def points(self):
         return self.POINTS_BY_DIFFICULTY[self.difficulty]
+
+    @property
+    def deadline_status(self):
+        if not self.deadline:
+            return None
+        today = date.today()
+        if self.deadline < today:
+            return "overdue"
+        if self.deadline == today:
+            return "due_today"
+        return "upcoming"
 
 
 class Reward(models.Model):

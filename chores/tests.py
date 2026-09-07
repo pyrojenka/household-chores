@@ -29,6 +29,37 @@ class ProfileModelTests(TestCase):
         self.assertFalse(child.is_adult)
 
 
+class TaskDeadlineStatusTests(TestCase):
+    def setUp(self):
+        self.adult = Profile.objects.get(name="Mom")
+        self.emma = Profile.objects.get(name="Emma")
+
+    def _task(self, deadline):
+        return Task.objects.create(
+            title="Task",
+            difficulty=Task.Difficulty.EASY,
+            assignment_mode=Task.AssignmentMode.DIRECT,
+            assigned_to=self.emma,
+            created_by=self.adult,
+            deadline=deadline,
+        )
+
+    def test_no_deadline_has_no_status(self):
+        self.assertIsNone(self._task(None).deadline_status)
+
+    def test_past_deadline_is_overdue(self):
+        task = self._task(date.today() - timedelta(days=1))
+        self.assertEqual(task.deadline_status, "overdue")
+
+    def test_todays_deadline_is_due_today(self):
+        task = self._task(date.today())
+        self.assertEqual(task.deadline_status, "due_today")
+
+    def test_future_deadline_is_upcoming(self):
+        task = self._task(date.today() + timedelta(days=1))
+        self.assertEqual(task.deadline_status, "upcoming")
+
+
 class SeedDataTests(TestCase):
     def test_seed_migration_creates_four_family_profiles(self):
         self.assertEqual(Profile.objects.count(), 4)

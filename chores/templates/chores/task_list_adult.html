@@ -41,6 +41,7 @@
         <th>Assigned to</th>
         <th>Points</th>
         <th>Status</th>
+        <th>Deadline</th>
     </tr>
     {% for task in tasks %}
     <tr style="border-bottom: 1px solid #eee;">
@@ -52,6 +53,15 @@
         </td>
         <td>{{ task.points }}</td>
         <td>{{ task.get_status_display }}</td>
+        <td>
+            {% if task.deadline_status == "overdue" %}
+            <span style="color: #c62828;">⚠ Overdue</span>
+            {% elif task.deadline_status == "due_today" %}
+            <span style="color: #e65100;">⏰ Due today</span>
+            {% elif task.deadline %}
+            {{ task.deadline }}
+            {% else %}—{% endif %}
+        </td>
     </tr>
     {% endfor %}
 </table>
